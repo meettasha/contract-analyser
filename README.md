@@ -45,3 +45,12 @@ The goal is to reduce manual legal review time while improving accuracy and acce
    - Missing safeguards
    - Obligations
 5. Results are displayed in a structured, readable format.Contract Analyzer 
+
+# Run backend
+
+uvicorn backend.main:app --reload
+
+
+# Run frontend
+
+streamlit run frontend/app.py
