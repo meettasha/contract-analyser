@@ -4,17 +4,22 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "llama3"
 
 def query_ollama(prompt):
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={
+                "model": MODEL,
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=60
+        )
 
-    response = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": MODEL,
-            "prompt": prompt,
-            "stream": False
-        }
-    )
+        response.raise_for_status()
+        return response.json()["response"]
 
-    return response.json()["response"]
+    except Exception as e:
+        return f"LLM_ERROR: {str(e)}"
 
 
 def analyze_clause(clause):
