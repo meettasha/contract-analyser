@@ -7,6 +7,7 @@ from embeddings import generate_embeddings
 from vector_store import VectorStore
 from analyzer import detect_risk
 from obligations import extract_obligations
+from llm import analyze_clause, analyze_contract, answer_query
 
 app = FastAPI()
 
@@ -37,28 +38,37 @@ async def upload_contract(file: UploadFile):
     analysis = []
 
     for clause in clauses:
-
         analysis.append({
-
             "clause": clause,
-
             "risk": detect_risk(clause)
-
         })
 
-    obligations = extract_obligations(clauses)
 
-    return {
-
-        "analysis": analysis,
-
-        "obligations": obligations
-
-    }
+    # LLM clause analysis (LIMITED for speed)
+    llm_clause_analysis = []
+    
+    for clause in clauses[:5]:
+        result = analyze_clause(clause)
+    
+        llm_clause_analysis.append({
+            "clause": clause,
+            "analysis": result
+        })
+    
+    
+    # Contract-level LLM
+    contract_analysis = analyze_contract(clauses)
+        obligations = extract_obligations(clauses)
+    
+        return {
+            "analysis": analysis,
+            "obligations": obligations,
+            "llm_clause_analysis": llm_clause_analysis,
+            "llm_contract_analysis": contract_analysis
+        }
 
 
 @app.get("/search")
-
 def search_contract(query: str):
 
     from embeddings import model
@@ -67,4 +77,15 @@ def search_contract(query: str):
 
     results = vector_db.search(query_embedding)
 
-    return {"results": results}
+    # Extract clauses from results
+    retrieved_clauses = [r["text"] for r in results]
+
+    context = "\n".join(retrieved_clauses)
+
+    # LLM answer
+    answer = answer_query(query, context)
+
+    return {
+        "results": results,
+        "answer": answer
+    }
