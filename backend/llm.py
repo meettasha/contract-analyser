@@ -1,79 +1,68 @@
 import requests
-import json
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "llama3"
 
+def query_ollama(prompt):
 
-def call_llm(prompt):
-    try:
-        response = requests.post(
-            OLLAMA_URL,
-            json={
-                "model": MODEL,
-                "prompt": prompt,
-                "stream": False
-            },
-            timeout=60
-        )
-
-        response.raise_for_status()
-        return response.json()["response"]
-
-    except Exception as e:
-        return f"LLM_ERROR: {str(e)}"
-
-
-# Safe JSON parser
-def parse_json(output):
-    try:
-        return json.loads(output)
-    except:
-        return {
-            "raw_output": output,
-            "error": "Failed to parse JSON"
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False
         }
+    )
+
+    return response.json()["response"]
 
 
-# Clause-level analysis
 def analyze_clause(clause):
+
     prompt = f"""
-    You are a legal expert AI.
+    You are a legal AI assistant.
 
-    Analyze this contract clause:
-
+    Analyze this clause:
     {clause}
 
-    STRICTLY return valid JSON:
-    {{
-        "risk_level": "Low/Medium/High",
-        "issue": "...",
-        "suggestion": "..."
-    }}
+    Return:
+    - Risk Level (Low/Medium/High)
+    - Explanation
     """
 
-    output = call_llm(prompt)
-    return parse_json(output)
+    return query_ollama(prompt)
 
 
-# Contract-level analysis
 def analyze_contract(clauses):
-    context = "\n".join(clauses[:15])  # keep smaller for stability
+
+    context = "\n".join(clauses[:20])
 
     prompt = f"""
-    You are a legal expert AI.
+    You are a legal AI assistant.
 
     Analyze this contract:
 
     {context}
 
-    STRICTLY return valid JSON:
-    {{
-        "summary": "...",
-        "key_obligations": ["...", "..."],
-        "missing_protections": ["...", "..."]
-    }}
+    Provide:
+    - Summary
+    - Key obligations
+    - Missing protections
     """
 
-    output = call_llm(prompt)
-    return parse_json(output)
+    return query_ollama(prompt)
+
+
+def answer_query(query, context):
+
+    prompt = f"""
+    Answer the question using the contract context.
+
+    Context:
+    {context}
+
+    Question:
+    {query}
+    """
+
+    return query_ollama(prompt)
