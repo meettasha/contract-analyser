@@ -1,8 +1,8 @@
-from utils import extract_text
-from clause_parser import split_clauses
-from embeddings import generate_embeddings, model
-from vector_store import VectorStore
-from llm import analyze_clause, analyze_contract, answer_query
+from .utils import extract_text
+from .clause_parser import split_clauses
+from .embeddings import generate_embeddings, model
+from .vector_store import VectorStore
+from .llm import analyze_clause, analyze_contract, answer_query
 
 class ContractPipeline:
 
@@ -44,7 +44,7 @@ class ContractPipeline:
 
         relevant = self.vector_db.search(query_emb)
 
-        context = "\n".join(relevant)
+        context = "\n".join([r["text"] for r in relevant])
 
         answer = answer_query(question, context)
 

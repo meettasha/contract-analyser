@@ -1,27 +1,31 @@
 from fastapi import FastAPI, UploadFile
-import shutil
+import os
 
-from utils import extract_text
-from clause_parser import split_clauses
-from embeddings import generate_embeddings
-from vector_store import VectorStore
-from analyzer import detect_risk
-from obligations import extract_obligations
-from llm import analyze_clause, analyze_contract, answer_query
+from .utils import extract_text
+from .clause_parser import split_clauses
+from .embeddings import generate_embeddings
+from .vector_store import VectorStore
+from .analyser import detect_risk        
+from .obligation import extract_obligations
+from .llm import analyze_clause, analyze_contract, answer_query
 
 app = FastAPI()
 
 vector_db = None
 
+CONTRACTS_DIR = r"C:\contracts"
+
 @app.post("/upload")
 
 async def upload_contract(file: UploadFile):
-
-    path = f"data/contracts/{file.filename}"
-
+    try:
+        os.makedirs(CONTRACTS_DIR)
+    except FileExistsError:
+        pass
+    path = os.path.join(CONTRACTS_DIR, file.filename)
+    contents = await file.read()
     with open(path, "wb") as buffer:
-
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(contents)
 
     text = extract_text(path)
 
@@ -58,20 +62,21 @@ async def upload_contract(file: UploadFile):
     
     # Contract-level LLM
     contract_analysis = analyze_contract(clauses)
-        obligations = extract_obligations(clauses)
+    obligations = extract_obligations(clauses)
     
-        return {
-            "analysis": analysis,
-            "obligations": obligations,
-            "llm_clause_analysis": llm_clause_analysis,
-            "llm_contract_analysis": contract_analysis
-        }
+    return {
+        "analysis": analysis,
+        "obligations": obligations,
+        "llm_clause_analysis": llm_clause_analysis,
+        "llm_contract_analysis": contract_analysis
+    }
 
 
 @app.get("/search")
 def search_contract(query: str):
-
-    from embeddings import model
+    if vector_db is None:
+        return {"error": "No contract uploaded yet"}
+    from .embeddings import model
 
     query_embedding = model.encode([query])
 

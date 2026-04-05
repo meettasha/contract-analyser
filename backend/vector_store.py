@@ -14,12 +14,12 @@ class VectorStore:
         self.clauses.extend(clauses)
 
     def search(self, query_embedding, k=5):
-
-        D, I = self.index.search(query_embedding, k)
-
+        D, I = self.index.search(np.array(query_embedding).astype('float32'), k)
         results = []
-
-        for i in I[0]:
-            results.append(self.clauses[i])
-
+        for idx, i in enumerate(I[0]):
+            if i < len(self.clauses):
+                results.append({
+                    "text": self.clauses[i],
+                    "score": float(D[0][idx])
+                })
         return results

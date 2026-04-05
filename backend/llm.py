@@ -1,7 +1,7 @@
 import requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3"
+MODEL = "phi3:mini"
 
 def query_ollama(prompt):
     try:
@@ -12,7 +12,7 @@ def query_ollama(prompt):
                 "prompt": prompt,
                 "stream": False
             },
-            timeout=60
+            timeout=400
         )
 
         response.raise_for_status()
